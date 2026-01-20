@@ -125,7 +125,7 @@
     </div>
   </div>
 
-  <script>
+<script>
     // 🚨🚨 ใส่ URL Apps Script ของเรา (ที่ลงท้าย /exec) 🚨🚨
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyWNYN_WZVBOnmsegtajxRke5uiHbC1lCHU1D2nQSbiDYJp-seE56dHo8VEgpGXS-96ug/exec'; 
     
@@ -166,10 +166,10 @@
       document.getElementById('loadingOverlay').classList.remove('hidden');
       document.getElementById('statusText').innerText = "กำลังส่งข้อมูล...";
       
-      // ✅ บันทึกข้อมูลลงเครื่อง (เพิ่ม dept และ division)
+      // ✅ บันทึกข้อมูลลงเครื่อง
       localStorage.setItem('safe_name', document.getElementById('name').value);
-      localStorage.setItem('safe_dept', document.getElementById('dept').value);       // เพิ่ม
-      localStorage.setItem('safe_division', document.getElementById('division').value); // เพิ่ม
+      localStorage.setItem('safe_dept', document.getElementById('dept').value);
+      localStorage.setItem('safe_division', document.getElementById('division').value);
       localStorage.setItem('safe_phone', document.getElementById('phone').value);
 
       // เตรียมข้อมูลส่ง
@@ -177,10 +177,8 @@
         action: 'submit_job', 
         userId: document.getElementById('userId').value,
         reporter: document.getElementById('name').value, 
-        // ✅ เพิ่มฟิลด์ใหม่ส่งไป Backend
         dept: document.getElementById('dept').value,
         division: document.getElementById('division').value,
-        
         tel: document.getElementById('phone').value,
         building: document.getElementById('building').value,
         floor: document.getElementById('floor').value,
@@ -193,34 +191,42 @@
       // ยิงข้อมูลไป Google Script
       fetch(GAS_URL, {
         method: 'POST',
-        mode: 'no-cors', 
-        headers: { 'Content-Type': 'application/json' },
+        // ❌ ลบ mode: 'no-cors' ออก เพื่อให้รับค่าตอบกลับได้
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // ใช้ text/plain เพื่อหลีกเลี่ยง CORS Preflight ในบางเคส
         body: JSON.stringify(formData)
       })
-      .then(() => {
-        // แจ้งเตือนสำเร็จ
-        Swal.fire({
-            icon: 'success',
-            title: 'แจ้งเหตุสำเร็จ!',
-            text: 'ระบบได้รับข้อมูลเรียบร้อยแล้ว',
-            confirmButtonText: 'ปิดหน้าต่าง'
-        }).then(() => {
-            liff.closeWindow();
-        });
+      .then(response => response.json()) // แปลงค่าที่รับกลับมาเป็น JSON
+      .then(data => {
+        // ✅ สั่งปิดตัวหมุนทันทีเมื่อได้รับของ
+        document.getElementById('loadingOverlay').classList.add('hidden');
+
+        if (data.status === 'success') {
+            Swal.fire({
+                icon: 'success',
+                title: 'แจ้งเหตุสำเร็จ!',
+                text: 'เลขที่ใบงาน: ' + (data.caseId || '-'), // แสดงเลขเคสด้วยถ้ามี
+                confirmButtonText: 'ปิดหน้าต่าง'
+            }).then(() => {
+                liff.closeWindow(); 
+            });
+        } else {
+            throw new Error(data.message || 'Unknown Error');
+        }
       })
       .catch(err => {
+        // กรณี Error
         document.getElementById('loadingOverlay').classList.add('hidden');
         Swal.fire('Error', 'เกิดข้อผิดพลาด: ' + err, 'error');
       });
     });
 
-    // ฟังก์ชันเลือกชั้นตามตึก (Copy Logic มาจากวิศวะ)
+    // ฟังก์ชันเลือกชั้นตามตึก
     function updateFloors() {
        const b = document.getElementById('building').value;
        const f = document.getElementById('floor');
        f.innerHTML = '<option value="">-- เลือก --</option>'; f.disabled = false;
        
-       let max = 5; // ค่า Default
+       let max = 5; 
        if (b.includes('ศูนย์การแพทย์') || b.includes('กาญจนาบริพัฒน์')) max = 5; 
        else if (b.includes('กาญจนาปันรักษ์')) max = 3;
        else if (b.includes('กันภัย')) max = 5; 
@@ -237,7 +243,7 @@
       document.getElementById('preview').innerHTML = ''; 
       processedImages = [];
       
-      for (let i=0; i<Math.min(files.length, 3); i++) { // จำกัด 3 รูป
+      for (let i=0; i<Math.min(files.length, 3); i++) { 
          const reader = new FileReader();
          reader.onload = function(ev) {
             const img = new Image();
@@ -264,7 +270,7 @@
       }
     });
     
-    // ฟังก์ชันโหลดข้อมูลจำ (เพิ่ม dept, division)
+    // ฟังก์ชันโหลดข้อมูลจำ
     function loadSavedData() {
       if(localStorage.getItem('safe_name')) document.getElementById('name').value = localStorage.getItem('safe_name');
       if(localStorage.getItem('safe_dept')) document.getElementById('dept').value = localStorage.getItem('safe_dept');
