@@ -50,8 +50,8 @@
             <input type="text" class="form-control" id="name" required placeholder="ระบุชื่อจริง">
         </div>
         <div class="mb-3">
-            <label class="form-label required">เบอร์โทรศัพท์</label>
-            <input type="tel" class="form-control" id="phone" required placeholder="0xxxxxxxxx">
+            <label class="form-label required">เบอร์ติดต่อ</label>
+            <input type="tel" class="form-control" id="phone" required>
         </div>
 
         <h6 class="text-secondary border-bottom pb-2 mt-4">📍 สถานที่พบเหตุ</h6>
@@ -204,11 +204,12 @@
        const f = document.getElementById('floor');
        f.innerHTML = '<option value="">-- เลือก --</option>'; f.disabled = false;
        
-       let max = 10; // ค่า Default
-       if (b.includes('ศูนย์การแพทย์') || b.includes('กาญจนาบริพัฒน์')) max = 9; // สมมติ
-       else if (b.includes('กาญจนาปันรักษ์')) max = 4;
-       else if (b.includes('หอพัก')) max = 5;
-       else if (b.includes('งานอาคาร')) max = 1;
+       let max = 5; // ค่า Default
+       if (b.includes('ศูนย์การแพทย์') || b.includes('กาญจนาบริพัฒน์')) max = 5; // สมมติ
+       else if (b.includes('กาญจนาปันรักษ์')) max = 3;
+       else if (b.includes('กันภัย')) max = 5; 
+       else if (b.includes('คุ้มภัย')) max = 6;
+       else if (b.includes('งานอาคาร')) max = 2;
 
        for(let i=1; i<=max; i++) f.innerHTML += `<option value="${i}">${i}</option>`;
     }
