@@ -47,7 +47,7 @@
         <h6 class="text-secondary border-bottom pb-2">👤 ข้อมูลผู้แจ้ง</h6>
         <div class="mb-3">
             <label class="form-label required">ชื่อ-นามสกุล</label>
-            <input type="text" class="form-control" id="name" required placeholder="ระบุชื่อจริง">
+            <input type="text" class="form-control" id="name" required placeholder="ระบุชื่อ">
         </div>
 
         <div class="row">
@@ -57,7 +57,7 @@
             </div>
             <div class="col-6 mb-3">
                 <label class="form-label required">ฝ่าย/งาน</label>
-                <input type="text" class="form-control" id="division" required placeholder="เช่น งานวิศวกรรม">
+                <input type="text" class="form-control" id="division" required>
             </div>
         </div>
         <div class="mb-3">
@@ -95,18 +95,18 @@
           </div>
         </div>
 
-<div class="form-group">
-  <label for="issueType">ประเภทความเสี่ยง</label>
-  <select id="issueType" name="issueType" required>
-    <option value="" disabled selected>เลือกประเภทความเสี่ยง...</option>
-    
-    <option value="สารเคมี">🧪 สารเคมี (กลิ่น/รั่วไหล)</option>
-    <option value="เชื้อรา">🍄 เชื้อรา/คุณภาพอากาศ</option>
-    <option value="อัคคีภัย">🔥 ความเสี่ยงอัคคีภัย/ทางหนีไฟ</option>
-    
-    <option value="ทั่วไป">⚠️ ความปลอดภัย/สภาพแวดล้อมอื่นๆ</option>
-  </select>
-</div>
+        <div class="mb-3">
+          <label for="issueType" class="form-label required">ประเภทความเสี่ยง</label>
+          <select class="form-select" id="issueType" name="issueType" required>
+            <option value="" disabled selected>-- เลือกประเภทความเสี่ยง --</option>
+            
+            <option value="สารเคมี">🧪 สารเคมี (หก/รั่วไหล)</option>
+            <option value="เชื้อรา">🍄 เชื้อรา/คุณภาพอากาศ</option>
+            <option value="อัคคีภัย">🔥 ความเสี่ยงอัคคีภัย/ทางหนีไฟ</option>
+            
+            <option value="ทั่วไป">⚠️ ความปลอดภัย/สภาพแวดล้อมอื่นๆ</option>
+          </select>
+        </div>
         
         <div class="mb-3">
             <label class="form-label required">รายละเอียดเพิ่มเติม</label>
