@@ -49,6 +49,17 @@
             <label class="form-label required">ชื่อ-นามสกุล</label>
             <input type="text" class="form-control" id="name" required placeholder="ระบุชื่อจริง">
         </div>
+
+        <div class="row">
+            <div class="col-6 mb-3">
+                <label class="form-label">หน่วยงาน</label>
+                <input type="text" class="form-control" id="dept" placeholder="ระบุ (ถ้ามี)">
+            </div>
+            <div class="col-6 mb-3">
+                <label class="form-label required">ฝ่าย/งาน</label>
+                <input type="text" class="form-control" id="division" required placeholder="เช่น งานวิศวกรรม">
+            </div>
+        </div>
         <div class="mb-3">
             <label class="form-label required">เบอร์ติดต่อ</label>
             <input type="tel" class="form-control" id="phone" required>
@@ -84,19 +95,18 @@
           </div>
         </div>
 
-        <h6 class="text-secondary border-bottom pb-2 mt-4">⚠️ รายละเอียด</h6>
-        <div class="mb-3">
-          <label class="form-label required">ประเภทความเสี่ยง</label>
-          <select class="form-select" id="category" required>
-            <option value="" disabled selected>-- เลือกประเภท --</option>
-            <option value="เชื้อรา">🍄 ปัญหาเชื้อรา</option>
-            <option value="สารเคมี">☣️ สารเคมีรั่วไหล/กลิ่น</option>
-            <option value="ไฟฟ้า/แสงสว่าง">⚡ ไฟฟ้า/แสงสว่าง</option>
-            <option value="กายภาพ/โครงสร้าง">🏗️ โครงสร้าง/พื้น/เพดาน</option>
-            <option value="อัคคีภัย">🔥 ความเสี่ยงอัคคีภัย</option>
-            <option value="ทั่วไป">📢 อื่นๆ / ทั่วไป</option>
-          </select>
-        </div>
+<div class="form-group">
+  <label for="issueType">ประเภทความเสี่ยง</label>
+  <select id="issueType" name="issueType" required>
+    <option value="" disabled selected>เลือกประเภทความเสี่ยง...</option>
+    
+    <option value="สารเคมี">🧪 สารเคมี (กลิ่น/รั่วไหล)</option>
+    <option value="เชื้อรา">🍄 เชื้อรา/คุณภาพอากาศ</option>
+    <option value="อัคคีภัย">🔥 ความเสี่ยงอัคคีภัย/ทางหนีไฟ</option>
+    
+    <option value="ทั่วไป">⚠️ ความปลอดภัย/สภาพแวดล้อมอื่นๆ</option>
+  </select>
+</div>
         
         <div class="mb-3">
             <label class="form-label required">รายละเอียดเพิ่มเติม</label>
@@ -136,7 +146,7 @@
         const profile = await liff.getProfile();
         document.getElementById('userId').value = profile.userId;
         
-        // ฟังก์ชันโหลดข้อมูลเก่าที่เคยกรอกไว้ (Name, Phone)
+        // ฟังก์ชันโหลดข้อมูลเก่าที่เคยกรอกไว้
         loadSavedData();
         
         document.getElementById('loadingOverlay').classList.add('hidden');
@@ -156,22 +166,28 @@
       document.getElementById('loadingOverlay').classList.remove('hidden');
       document.getElementById('statusText').innerText = "กำลังส่งข้อมูล...";
       
-      // บันทึกข้อมูลลงเครื่อง (ครั้งหน้าจะได้ไม่ต้องพิมพ์)
+      // ✅ บันทึกข้อมูลลงเครื่อง (เพิ่ม dept และ division)
       localStorage.setItem('safe_name', document.getElementById('name').value);
+      localStorage.setItem('safe_dept', document.getElementById('dept').value);       // เพิ่ม
+      localStorage.setItem('safe_division', document.getElementById('division').value); // เพิ่ม
       localStorage.setItem('safe_phone', document.getElementById('phone').value);
 
       // เตรียมข้อมูลส่ง
       const formData = {
-        action: 'submit_job', // ต้องมี action เพื่อให้หลังบ้านรู้
+        action: 'submit_job', 
         userId: document.getElementById('userId').value,
-        reporter: document.getElementById('name').value, // แมพให้ตรงกับ DB
+        reporter: document.getElementById('name').value, 
+        // ✅ เพิ่มฟิลด์ใหม่ส่งไป Backend
+        dept: document.getElementById('dept').value,
+        division: document.getElementById('division').value,
+        
         tel: document.getElementById('phone').value,
         building: document.getElementById('building').value,
         floor: document.getElementById('floor').value,
         room: document.getElementById('room').value,
         category: document.getElementById('category').value,
         detail: document.getElementById('detail').value,
-        images: processedImages // ส่งรูปที่บีบอัดแล้ว
+        images: processedImages 
       };
 
       // ยิงข้อมูลไป Google Script
@@ -205,7 +221,7 @@
        f.innerHTML = '<option value="">-- เลือก --</option>'; f.disabled = false;
        
        let max = 5; // ค่า Default
-       if (b.includes('ศูนย์การแพทย์') || b.includes('กาญจนาบริพัฒน์')) max = 5; // สมมติ
+       if (b.includes('ศูนย์การแพทย์') || b.includes('กาญจนาบริพัฒน์')) max = 5; 
        else if (b.includes('กาญจนาปันรักษ์')) max = 3;
        else if (b.includes('กันภัย')) max = 5; 
        else if (b.includes('คุ้มภัย')) max = 6;
@@ -214,7 +230,7 @@
        for(let i=1; i<=max; i++) f.innerHTML += `<option value="${i}">${i}</option>`;
     }
 
-    // ฟังก์ชันบีบอัดรูป (Image Compression Engine) - หัวใจสำคัญ!
+    // ฟังก์ชันบีบอัดรูป
     let processedImages = [];
     document.getElementById('photos').addEventListener('change', function(e) {
       const files = e.target.files;
@@ -226,23 +242,19 @@
          reader.onload = function(ev) {
             const img = new Image();
             img.onload = function() {
-               // สร้าง Canvas เพื่อย่อรูป
                const cvs = document.createElement('canvas'); 
                const ctx = cvs.getContext('2d');
                let w = img.width, h = img.height;
                
-               // กำหนดขนาดสูงสุดด้านกว้างไม่เกิน 1000px (ลดขนาดไฟล์ได้เยอะมาก)
                if(w > 1000){ h *= 1000/w; w = 1000; }
                
                cvs.width = w; cvs.height = h;
                ctx.drawImage(img, 0, 0, w, h);
                
-               // แปลงกลับเป็น Base64 แบบ JPEG Quality 0.7 (ชัดแต่ไฟล์เล็ก)
                const resizedData = cvs.toDataURL('image/jpeg', 0.7);
                
                processedImages.push(resizedData);
                
-               // แสดง Preview
                document.getElementById('preview').innerHTML += 
                  `<img src="${resizedData}" class="rounded shadow-sm" style="width:70px;height:70px;object-fit:cover;border:2px solid #fff;">`;
             }
@@ -252,9 +264,11 @@
       }
     });
     
-    // ฟังก์ชันโหลดข้อมูลจำ
+    // ฟังก์ชันโหลดข้อมูลจำ (เพิ่ม dept, division)
     function loadSavedData() {
       if(localStorage.getItem('safe_name')) document.getElementById('name').value = localStorage.getItem('safe_name');
+      if(localStorage.getItem('safe_dept')) document.getElementById('dept').value = localStorage.getItem('safe_dept');
+      if(localStorage.getItem('safe_division')) document.getElementById('division').value = localStorage.getItem('safe_division');
       if(localStorage.getItem('safe_phone')) document.getElementById('phone').value = localStorage.getItem('safe_phone');
     }
   </script>
