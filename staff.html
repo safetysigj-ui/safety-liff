@@ -16,12 +16,8 @@
     .bg-progress { background-color: #cce5ff; color: #004085; }
     .nav-pills .nav-link.active { background-color: #00B900; color: white !important; }
     .nav-pills .nav-link { color: #555; background: #e9ecef; margin: 0 5px; border-radius: 20px; }
-    
-    /* กล่องประวัติ (Timeline) */
     .history-box { background: #f8f9fa; border-radius: 8px; padding: 10px; font-size: 0.85rem; max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; }
     .history-item { margin-bottom: 8px; border-bottom: 1px dashed #ddd; padding-bottom: 5px; }
-    .history-item:last-child { border-bottom: none; margin-bottom: 0; }
-    
     .preview-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; display: none; margin-top: 10px; border: 1px solid #ddd; }
   </style>
 </head>
@@ -35,7 +31,7 @@
     
     <ul class="nav nav-pills nav-fill mb-3" id="pills-tab">
       <li class="nav-item"><button class="nav-link active fw-bold" id="tab-pending" data-bs-toggle="pill" data-bs-target="#content-pending">📢 รอรับงาน</button></li>
-      <li class="nav-item"><button class="nav-link fw-bold" id="tab-my" data-bs-toggle="pill" data-bs-target="#content-my">👷 กำลังทำ</button></li>
+      <li class="nav-item"><button class="nav-link fw-bold" id="tab-my" data-bs-toggle="pill" data-bs-target="#content-my">👷 กำลังดำเนินการ</button></li>
     </ul>
   </div>
 
@@ -56,7 +52,7 @@
           <div class="mb-3">
             <label class="form-label fw-bold">เลือกการดำเนินการ</label>
             <select class="form-select" id="actionType" onchange="toggleActionUI()">
-              <option value="update">🟡 อัปเดตความคืบหน้า (งานยังไม่จบ)</option>
+              <option value="update">🟡 อัปเดตความคืบหน้า / เข้าร่วมงาน</option>
               </select>
           </div>
           <div class="mb-3">
@@ -80,11 +76,11 @@
   <input type="hidden" id="userId"><input type="hidden" id="displayName">
 
   <script>
-    // 🚨🚨 URL เดิมของ Apps Script 🚨🚨
+    // 🚨🚨 URL Apps Script เดิมของพี่ 🚨🚨
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyWNYN_WZVBOnmsegtajxRke5uiHbC1lCHU1D2nQSbiDYJp-seE56dHo8VEgpGXS-96ug/exec';
     
-    // 🚨🚨 LIFF ID ช่าง 🚨🚨
-    const LIFF_ID = '2008927233-soAbiW4q';
+    // 🚨🚨 LIFF ID ของช่าง (ตัวที่ 2) 🚨🚨
+    const LIFF_ID = '2008916292-W4q.....';
 
     let userIsAdmin = false;
 
@@ -107,21 +103,26 @@
       })
       .then(res => res.json())
       .then(data => {
+        if (data.error) {
+           Swal.fire('Access Denied', 'คุณไม่มีรายชื่อในระบบ Staff Data', 'error');
+           return;
+        }
+        
         userIsAdmin = data.isAdmin;
-        updateUserBadge(userIsAdmin);
+        updateUserBadge(userIsAdmin, data.staffName); // แสดงชื่อพนักงานด้วย
         renderJobs('list-pending', data.jobs.pending, true);
         renderJobs('list-my', data.jobs.my, false);
       });
     }
 
-    function updateUserBadge(isAdmin) {
+    function updateUserBadge(isAdmin, staffName) {
       const badge = document.getElementById('userRoleBadge');
       if (isAdmin) {
         badge.className = 'badge bg-danger';
-        badge.innerText = 'Admin / JorPor';
+        badge.innerText = `Admin: ${staffName || ''}`;
       } else {
         badge.className = 'badge bg-success';
-        badge.innerText = 'Technician';
+        badge.innerText = `Staff: ${staffName || ''}`;
       }
     }
 
@@ -152,7 +153,7 @@
               ${job.folderUrl ? `<a href="${job.folderUrl}" target="_blank" class="btn btn-sm btn-outline-secondary flex-grow-1">📷 รูป</a>` : ''}
               ${isPending ? 
                 `<button onclick="acceptJob('${job.caseId}')" class="btn btn-sm btn-primary flex-grow-1">🛠️ รับงาน</button>` : 
-                `<button onclick="openActionModal('${job.caseId}')" class="btn btn-sm btn-warning flex-grow-1 text-dark">📝 จัดการงาน</button>`
+                `<button onclick="openActionModal('${job.caseId}')" class="btn btn-sm btn-warning flex-grow-1 text-dark">📝 อัปเดต / เข้าร่วม</button>`
               }
             </div>
           </div>`;
@@ -180,7 +181,7 @@
       document.getElementById('imgPreview').style.display = 'none';
 
       const select = document.getElementById('actionType');
-      select.innerHTML = '<option value="update">🟡 อัปเดตความคืบหน้า (งานยังไม่จบ)</option>';
+      select.innerHTML = '<option value="update">🟡 อัปเดตความคืบหน้า / เข้าร่วมงาน</option>';
       if (userIsAdmin) {
         select.innerHTML += '<option value="completed">🟢 QC ผ่าน / ปิดงาน (เสร็จสมบูรณ์)</option>';
       }
@@ -213,11 +214,14 @@
       const remark = document.getElementById('actionDetail').value;
       const status = document.getElementById('actionType').value;
       const fileInput = document.getElementById('actionImage');
-      
+      const userId = document.getElementById('userId').value; // 🔥 ดึง User ID มา
+
       if (!remark) { Swal.fire('เตือน', 'กรุณาระบุรายละเอียด', 'warning'); return; }
       Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-      const payload = { action: 'close_job', caseId: caseId, remark: remark, status: status, image: null };
+      // 🔥 ใส่ userId ลงใน payload ด้วย
+      const payload = { action: 'close_job', caseId: caseId, remark: remark, status: status, image: null, userId: userId };
+      
       if (fileInput.files.length > 0) {
         const reader = new FileReader();
         reader.readAsDataURL(fileInput.files[0]);
