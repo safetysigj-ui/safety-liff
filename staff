@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบช่างรับงาน</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap');
+    body { background-color: #f0f2f5; font-family: 'Sarabun', sans-serif; padding-bottom: 80px; }
+    .job-card { border: none; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; background: white; }
+    .status-badge { font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; }
+    .bg-pending { background-color: #fff3cd; color: #856404; }
+    .bg-progress { background-color: #cce5ff; color: #004085; }
+    .nav-pills .nav-link.active { background-color: #00B900; } /* สีเขียว LINE */
+    .nav-pills .nav-link { color: #555; }
+  </style>
+</head>
+<body>
+
+  <div class="container mt-3">
+    <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active fw-bold" id="tab-pending" data-bs-toggle="pill" data-bs-target="#content-pending" type="button">📢 งานรอรับ</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-bold" id="tab-my" data-bs-toggle="pill" data-bs-target="#content-my" type="button">👷 งานของฉัน</button>
+      </li>
+    </ul>
+  </div>
+
+  <div class="container tab-content" id="pills-tabContent">
+    
+    <div class="tab-pane fade show active" id="content-pending">
+      <div id="list-pending" class="text-center text-muted mt-5">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="mt-2">กำลังโหลดงาน...</p>
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="content-my">
+      <div id="list-my" class="text-center text-muted mt-5">
+        <small>ยังไม่มีงานที่รับไว้</small>
+      </div>
+    </div>
+  </div>
+
+  <input type="hidden" id="userId">
+  <input type="hidden" id="displayName">
+
+  <script>
+    // 🚨🚨 ใส่ URL เดิมของเราเลยครับ 🚨🚨
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyWNYN_WZVBOnmsegtajxRke5uiHbC1lCHU1D2nQSbiDYJp-seE56dHo8VEgpGXS-96ug/exec';
+    
+    // 🚨🚨 ใส่ LIFF ID อันที่ 2 (สำหรับช่าง) 🚨🚨
+    const LIFF_ID = '2008927233-soAbiW4q'; // <-- แก้ตรงนี้เป็น ID อันที่ 2 ของพี่นะ
+
+    async function main() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) { liff.login(); return; }
+        
+        const profile = await liff.getProfile();
+        document.getElementById('userId').value = profile.userId;
+        document.getElementById('displayName').value = profile.displayName;
+        
+        // โหลดข้อมูลงาน
+        fetchJobs();
+
+      } catch (err) { Swal.fire('Error', 'LIFF Error: ' + err, 'error'); }
+    }
+    main();
+
+    function fetchJobs() {
+      const userId = document.getElementById('userId').value;
+      
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'get_staff_jobs', userId: userId })
+      })
+      .then(res => res.json())
+      .then(data => {
+        renderJobs('list-pending', data.jobs.pending, true); // True = มีปุ่มรับงาน
+        renderJobs('list-my', data.jobs.my, false);          // False = ไม่มีปุ่มรับงาน (มีปุ่มปิดงานแทน เดี๋ยวทำต่อ)
+      });
+    }
+
+    function renderJobs(elementId, jobs, isPendingTab) {
+      const container = document.getElementById(elementId);
+      if (jobs.length === 0) {
+        container.innerHTML = '<p class="mt-5 text-muted">🎉 ไม่มีงานค้าง</p>';
+        return;
+      }
+      
+      let html = '';
+      jobs.forEach(job => {
+        html += `
+          <div class="job-card p-3">
+            <div class="d-flex justify-content-between align-items-start">
+              <h6 class="fw-bold text-dark mb-1">${job.type}</h6>
+              <span class="status-badge ${isPendingTab ? 'bg-pending' : 'bg-progress'}">${job.status}</span>
+            </div>
+            <small class="text-muted d-block mb-2">#${job.caseId} | 📅 ${job.date}</small>
+            
+            <div class="alert alert-light border p-2 mb-2" style="font-size:0.9rem;">
+              ${job.detail}
+            </div>
+            
+            <p class="mb-1" style="font-size:0.85rem;">
+              📍 <strong>สถานที่:</strong> ${job.location}<br>
+              👤 <strong>ผู้แจ้ง:</strong> ${job.reporter} (Tel: ${job.tel})
+            </p>
+            
+            <div class="d-flex gap-2 mt-3">
+              ${job.folderUrl ? `<a href="${job.folderUrl}" target="_blank" class="btn btn-sm btn-outline-secondary flex-grow-1">📷 ดูรูป</a>` : ''}
+              
+              ${isPendingTab ? 
+                `<button onclick="acceptJob('${job.caseId}')" class="btn btn-sm btn-primary flex-grow-1">🛠️ รับงาน</button>` 
+                : 
+                `<button class="btn btn-sm btn-success flex-grow-1">✅ ปิดงาน (Coming Soon)</button>`
+              }
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function acceptJob(caseId) {
+      Swal.fire({
+        title: 'ยืนยันรับงาน?',
+        text: "คุณต้องการรับงานนี้ใช่ไหม",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ใช่, รับงานเลย',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // ส่งข้อมูลไปหลังบ้าน
+          const userId = document.getElementById('userId').value;
+          const name = document.getElementById('displayName').value;
+          
+          Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          
+          fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'accept_job', caseId: caseId, userId: userId, name: name })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire('สำเร็จ', 'รับงานเรียบร้อย!', 'success').then(() => fetchJobs()); // โหลดหน้าใหม่
+            } else {
+              Swal.fire('ผิดพลาด', data.message, 'error');
+            }
+          });
+        }
+      });
+    }
+  </script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
